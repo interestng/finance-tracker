@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!--improve overall looks, add sleek features and make stuff pop more-->
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f9fafb;
+            margin: 0; padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+        }
+        a.logout-btn {
+            background-color: #f44336;
+            color: white;
+            padding: 8px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        a.logout-btn:hover {
+            background-color: #d32f2f;
+        }
+        .summary {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 7px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            max-width: 400px;
+        }
+        .summary p {
+            font-size: 16px;
+            margin: 6px 0;
+        }
+        h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 7px rgba(0,0,0,0.1);
+            max-width: 400px;
+            margin-bottom: 30px;
+        }
+        form input[type="number"],
+        form select,
+        form input[type="text"],
+        form input[type="date"] {
+            width: 100%;
+            padding: 8px 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        form input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        form input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 700px;
+            background: white;
+            box-shadow: 0 0 7px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+            color: #555;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .no-transactions {
+            max-width: 700px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 7px rgba(0,0,0,0.1);
+            font-style: italic;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Welcome {{ username }}</h1>
+        <a href="/logout" class="logout-btn">Logout</a>
+    </header>
+
+    <section class="summary">
+        <h2>Summary</h2>
+        <p><strong>Income:</strong> {{ income }}</p>
+        <p><strong>Expenses:</strong> {{ expenses }}</p>
+        <p><strong>Balance:</strong> {{ income - expenses }}</p>
+    </section>
+    <!--add the editing stuff frontend-->
+    <section class="add-transaction">
+        <h2>Add Transaction</h2>
+        <form method="post" action="/add">
+            <input name="amount" type="number" step="0.01" placeholder="Amount" required />
+            <select name="type" required>
+                <option value="" disabled selected>Select Type</option>
+                <option value="income">Income</option>
+                <option value="expense">Expense</option>
+            </select>
+            <input name="category" type="text" placeholder="Category" required />
+            <input name="date" type="date" required id="dateInput" />
+            <input type="submit" value="Add Transaction" />
+        </form>
+    </section>
+
+    <section class="transactions-list">
+        <h2>Your Transactions</h2>
+        {% if transactions %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in transactions %}
+                <tr>
+                    <td>{{ t.date }}</td>
+                    <td>{{ t.category }}</td>
+                    <td>{{ t.type }}</td>
+                    <td>{{ t.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-transactions">No transactions yet</div>
+        {% endif %}
+    </section>
+
+    <script>
+        // set default date input to today in YYYY-MM-DD format
+        const dateInput = document.getElementById('dateInput');
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    </script>
+</body>
+</html>
