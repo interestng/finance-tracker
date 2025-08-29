@@ -1,11 +1,15 @@
 from flask import Flask, render_template, request, redirect, session
 from pymongo import MongoClient
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "something"
+app.secret_key = os.getenv("SECRET_KEY")
+MONGO_URI = os.getenv("MONGO_URI")
 
-MONGO_URI = "mongodb+srv://interestng:aviralthebest!@financecluster.t3exzgo.mongodb.net/?retryWrites=true&w=majority&appName=FinanceCluster"
 client = MongoClient(MONGO_URI)
 db = client.finance_db
 
@@ -14,7 +18,10 @@ def signup():
     if request.method == 'POST':
         if db.users.find_one({"username": request.form['username']}):
             return "user exists"
-        db.users.insert_one({"username": request.form['username'], "password": request.form['password']})
+        db.users.insert_one({
+            "username": request.form['username'], 
+            "password": request.form['password']
+        })
         return redirect('/login')
     return render_template('signup.html')
 
@@ -34,7 +41,6 @@ def logout():
     return redirect('/login')
 
 @app.route('/dashboard')
-# todo: add password hashing maybe?
 def dashboard():
     if 'user' not in session:
         return redirect('/login')
@@ -45,8 +51,14 @@ def dashboard():
     income = sum(t['amount'] for t in transactions if t['type'] == 'income')
     expenses = sum(t['amount'] for t in transactions if t['type'] == 'expense')
 
-    return render_template('dashboard.html', username=username, transactions=transactions, income=income, expenses=expenses)
-# todo: add editing/removing transactions and dates and stuff
+    return render_template(
+        'dashboard.html',
+        username=username,
+        transactions=transactions,
+        income=income,
+        expenses=expenses
+    )
+
 @app.route('/add', methods=['POST'])
 def add():
     if 'user' not in session:
@@ -56,6 +68,7 @@ def add():
         amount = float(request.form['amount'])
     except:
         amount = 0
+
     t_type = request.form['type']
     category = request.form['category']
     date_str = request.form['date']
