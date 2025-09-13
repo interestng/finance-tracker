@@ -1,151 +1,245 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
 <head>
-    <!--improve overall looks, add sleek features and make stuff pop more-->
-    <title>Dashboard</title>
+    <title>Finance Tracker Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f9fafb;
-            margin: 0; padding: 20px;
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f8f9fa; 
+            margin: 0; 
+            padding: 0; 
         }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
+        header { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            padding: 20px; 
+            text-align: center; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        h1 {
-            color: #333;
-            margin: 0;
-        }
-        a.logout-btn {
-            background-color: #f44336;
-            color: white;
-            padding: 8px 15px;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
-        }
-        a.logout-btn:hover {
-            background-color: #d32f2f;
-        }
-        .summary {
-            background: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 7px rgba(0,0,0,0.1);
-            margin-bottom: 25px;
-            max-width: 400px;
-        }
-        .summary p {
-            font-size: 16px;
-            margin: 6px 0;
-        }
-        h2 {
-            color: #333;
-            margin-bottom: 15px;
-        }
-        form {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 7px rgba(0,0,0,0.1);
-            max-width: 400px;
-            margin-bottom: 30px;
-        }
-        form input[type="number"],
-        form select,
-        form input[type="text"],
-        form input[type="date"] {
-            width: 100%;
-            padding: 8px 10px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            font-size: 14px;
-        }
-        form input[type="submit"] {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 12px;
-            width: 100%;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        form input[type="submit"]:hover {
-            background-color: #45a049;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            max-width: 700px;
-            background: white;
-            box-shadow: 0 0 7px rgba(0,0,0,0.1);
-            border-radius: 8px;
+        .container { padding: 20px; max-width: 1200px; margin: 0 auto; }
+        .tabs { 
+            display: flex; 
+            background: white; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+            margin-bottom: 20px;
             overflow: hidden;
         }
-        th, td {
-            text-align: left;
-            padding: 12px 15px;
-            border-bottom: 1px solid #ddd;
-            font-size: 14px;
-            color: #555;
-        }
-        th {
-            background-color: #4CAF50;
-            color: white;
-        }
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-        .no-transactions {
-            max-width: 700px;
+        .tab-button { 
+            flex: 1; 
+            padding: 15px; 
+            text-align: center; 
+            transition: all 0.3s; 
+            cursor: pointer;
+            border: none;
             background: white;
-            padding: 15px;
+            font-weight: 500;
+        }
+        .tab-button:hover { background: #f8f9fa; }
+        .tab-button.active { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+        }
+        .tab-content { 
+            display: none; 
+            animation: fadeIn 0.3s ease-in;
+        }
+        .tab-content.active { display: block; }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .card.income { border-left: 5px solid #28a745; }
+        .card.expense { border-left: 5px solid #dc3545; }
+        .card.balance { border-left: 5px solid #007bff; }
+        .card h3 { margin: 0 0 10px 0; color: #666; font-size: 14px; text-transform: uppercase; }
+        .card .amount { font-size: 32px; font-weight: bold; margin: 0; }
+        
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input, .form-group select {
+            padding: 12px;
+            border: 2px solid #e9ecef;
             border-radius: 8px;
-            box-shadow: 0 0 7px rgba(0,0,0,0.1);
-            font-style: italic;
-            color: #777;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .btn-danger { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
+        .btn-success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+        
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        th { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            text-align: left; 
+            font-weight: 600;
+            color: #495057;
+        }
+        td { 
+            padding: 15px; 
+            border-top: 1px solid #e9ecef;
+        }
+        tr:hover { background: #f8f9fa; }
+        
+        .chart-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .highlights-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .highlight-item {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        .highlight-item.positive {
+            background: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+        .highlight-item.negative {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+        
+        #editFormContainer { 
+            background: white; 
+            padding: 30px; 
+            margin-top: 20px; 
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: none; 
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Welcome {{ username }}</h1>
-        <a href="/logout" class="logout-btn">Logout</a>
-    </header>
+<header>
+    <h1>Welcome, {{ username }}</h1>
+    <a href="/logout" style="color:white; text-decoration: none; padding: 8px 16px; background: rgba(255,255,255,0.2); border-radius: 20px;">Logout</a>
+</header>
+<div class="container">
+    <div class="summary-cards">
+        <div class="card income">
+            <h3>Total Income</h3>
+            <p class="amount">${{ "%.2f"|format(income) }}</p>
+        </div>
+        <div class="card expense">
+            <h3>Total Expenses</h3>
+            <p class="amount">${{ "%.2f"|format(expenses) }}</p>
+        </div>
+        <div class="card balance">
+            <h3>Balance</h3>
+            <p class="amount">${{ "%.2f"|format(income - expenses) }}</p>
+        </div>
+    </div>
 
-    <section class="summary">
-        <h2>Summary</h2>
-        <p><strong>Income:</strong> {{ income }}</p>
-        <p><strong>Expenses:</strong> {{ expenses }}</p>
-        <p><strong>Balance:</strong> {{ income - expenses }}</p>
-    </section>
-    <!--add the editing stuff frontend-->
-    <section class="add-transaction">
-        <h2>Add Transaction</h2>
-        <form method="post" action="/add">
-            <input name="amount" type="number" step="0.01" placeholder="Amount" required />
-            <select name="type" required>
-                <option value="" disabled selected>Select Type</option>
-                <option value="income">Income</option>
-                <option value="expense">Expense</option>
-            </select>
-            <input name="category" type="text" placeholder="Category" required />
-            <input name="date" type="date" required id="dateInput" />
-            <input type="submit" value="Add Transaction" />
-        </form>
-    </section>
+    <div class="tabs">
+        <div class="tab-button active" onclick="openTab('transactions')">Transactions</div>
+        <div class="tab-button" onclick="openTab('graphs')">Graphs</div>
+        <div class="tab-button" onclick="openTab('highlights')">Highlights</div>
+    </div>
 
-    <section class="transactions-list">
-        <h2>Your Transactions</h2>
-        {% if transactions %}
+    <!-- Transactions Tab -->
+    <div id="transactions" class="tab-content active">
+        <div class="form-container">
+            <h2>Add New Transaction</h2>
+            <form method="post" action="/add">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="amount">Amount</label>
+                        <input type="number" step="0.01" name="amount" id="amount" placeholder="0.00" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Type</label>
+                        <select name="type" id="type">
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <input type="text" name="category" id="category" placeholder="e.g., Salary, Food, Rent" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date</label>
+                        <input type="date" name="date" id="date" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn">Add Transaction</button>
+            </form>
+        </div>
+
+        <h2>Transaction History</h2>
         <table>
             <thead>
                 <tr>
@@ -153,6 +247,7 @@
                     <th>Category</th>
                     <th>Type</th>
                     <th>Amount</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -160,22 +255,214 @@
                 <tr>
                     <td>{{ t.date }}</td>
                     <td>{{ t.category }}</td>
-                    <td>{{ t.type }}</td>
-                    <td>{{ t.amount }}</td>
+                    <td>
+                        <span style="color: {{ 'green' if t.type == 'income' else 'red' }}; font-weight: bold;">
+                            {{ t.type.title() }}
+                        </span>
+                    </td>
+                    <td style="color: {{ 'green' if t.type == 'income' else 'red' }}; font-weight: bold;">
+                        ${{ "%.2f"|format(t.amount) }}
+                    </td>
+                    <td>
+                        <button onclick="showEditForm('{{ t._id }}')" class="btn" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;">Edit</button>
+                        <form method="post" action="/delete/{{ t._id }}" style="display:inline;">
+                            <button type="submit" class="btn btn-danger" style="padding: 6px 12px; font-size: 12px;">Delete</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
+                {% if transactions|length == 0 %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px; color: #666;">
+                        No transactions yet. Add your first transaction above!
+                    </td>
+                </tr>
+                {% endif %}
             </tbody>
         </table>
-        {% else %}
-        <div class="no-transactions">No transactions yet</div>
-        {% endif %}
-    </section>
 
-    <script>
-        // set default date input to today in YYYY-MM-DD format
-        const dateInput = document.getElementById('dateInput');
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.value = today;
-    </script>
+        <div id="editFormContainer">
+            <h3>Edit Transaction</h3>
+            <form id="editForm" method="post">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_amount">Amount</label>
+                        <input type="number" step="0.01" name="amount" id="edit_amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_type">Type</label>
+                        <select name="type" id="edit_type">
+                            <option value="income">Income</option>
+                            <option value="expense">Expense</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit_category">Category</label>
+                        <input type="text" name="category" id="edit_category" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_date">Date</label>
+                        <input type="date" name="date" id="edit_date" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Save Changes</button>
+                <button type="button" onclick="hideEditForm()" class="btn" style="background: #6c757d;">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Graphs Tab -->
+    <div id="graphs" class="tab-content">
+        <div class="chart-container">
+            <h2>Income vs Expenses</h2>
+            <canvas id="incomeExpenseChart" width="400" height="200"></canvas>
+        </div>
+        <div class="chart-container">
+            <h2>Monthly Spending Trend</h2>
+            <canvas id="monthlyChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Highlights Tab -->
+    <div id="highlights" class="tab-content">
+        <div class="highlights-container">
+            <h2>see your highlights here!</h2>
+            {% for h in highlights %}
+            <div class="highlight-item {{ 'positive' if 'decreased' in h or 'saved' in h else 'negative' if 'increased' in h else '' }}">
+                {{ h }}
+            </div>
+            {% endfor %}
+            
+            {% if transactions|length > 0 %}
+            <div class="highlight-item positive">
+                <strong>highlights:</strong><br>
+                • You have {{ transactions|length }} transaction{{ 's' if transactions|length != 1 else '' }}<br>
+                • Average transaction: ${{ "%.2f"|format((income + expenses) / transactions|length) if transactions|length > 0 else '0.00' }}<br>
+                • Most common category: {{ most_common_category }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+let incomeExpenseChart = null;
+let monthlyChart = null;
+
+function openTab(tabId){
+    const contents = document.querySelectorAll('.tab-content');
+    const buttons = document.querySelectorAll('.tab-button');
+    contents.forEach(c=>c.classList.remove('active'));
+    buttons.forEach(b=>b.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    document.querySelector(`.tab-button[onclick="openTab('${tabId}')"]`).classList.add('active');
+    
+    if (tabId === 'graphs') {
+        setTimeout(createCharts, 100);
+    }
+}
+
+function createCharts() {
+    if (incomeExpenseChart) incomeExpenseChart.destroy();
+    if (monthlyChart) monthlyChart.destroy();
+    
+    const income = {{ income }};
+    const expenses = {{ expenses }};
+    
+    const ctx1 = document.getElementById('incomeExpenseChart').getContext('2d');
+    incomeExpenseChart = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+            labels: ['Income', 'Expenses'],
+            datasets: [{
+                data: [income, expenses],
+                backgroundColor: ['#28a745', '#dc3545'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    const monthlyData = {{ transactions|tojson }};
+    const monthlyTotals = {};
+    
+    monthlyData.forEach(transaction => {
+        const month = transaction.date.substring(0, 7);
+        if (!monthlyTotals[month]) {
+            monthlyTotals[month] = { income: 0, expenses: 0 };
+        }
+        if (transaction.type === 'income') {
+            monthlyTotals[month].income += transaction.amount;
+        } else {
+            monthlyTotals[month].expenses += transaction.amount;
+        }
+    });
+    
+    const months = Object.keys(monthlyTotals).sort();
+    const incomeData = months.map(month => monthlyTotals[month].income);
+    const expenseData = months.map(month => monthlyTotals[month].expenses);
+    
+    const ctx2 = document.getElementById('monthlyChart').getContext('2d');
+    monthlyChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Income',
+                data: incomeData,
+                borderColor: '#28a745',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Expenses',
+                data: expenseData,
+                borderColor: '#dc3545',
+                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function showEditForm(id){
+    const container = document.getElementById('editFormContainer');
+    const form = document.getElementById('editForm');
+    const row = document.querySelector(`button[onclick="showEditForm('${id}')"]`).closest('tr');
+    const cells = row.children;
+    
+    document.getElementById('edit_amount').value = cells[3].innerText.replace('$', '');
+    document.getElementById('edit_type').value = cells[2].innerText.toLowerCase();
+    document.getElementById('edit_category').value = cells[1].innerText;
+    document.getElementById('edit_date').value = cells[0].innerText;
+    form.action = `/edit/${id}`;
+    container.style.display = 'block';
+    container.scrollIntoView({ behavior: 'smooth' });
+}
+
+function hideEditForm(){
+    document.getElementById('editFormContainer').style.display = 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('date').valueAsDate = new Date();
+});
+</script>
 </body>
 </html>
