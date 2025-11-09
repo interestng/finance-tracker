@@ -1,0 +1,237 @@
+<!doctype html>
+<html>
+<head>
+    <title>Settings - Finance Tracker</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+        }
+        header {
+            background: {% if theme == 'blue' %}linear-gradient(135deg, #42A5F5 0%, #1565C0 100%){% elif theme == 'orange' %}linear-gradient(135deg, #FFB74D 0%, #E65100 100%){% elif theme == 'red' %}linear-gradient(135deg, #EF5350 0%, #B71C1C 100%){% elif theme == 'green' %}linear-gradient(135deg, #66BB6A 0%, #1B5E20 100%){% else %}linear-gradient(135deg, #667eea 0%, #764ba2 100%){% endif %};
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            flex: 1;
+            text-align: center;
+        }
+        .profile-menu {
+            position: relative;
+        }
+        .profile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: background 0.3s;
+        }
+        .profile-icon:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .profile-dropdown {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            min-width: 150px;
+            display: none;
+            z-index: 1000;
+        }
+        .profile-dropdown.show {
+            display: block;
+        }
+        .profile-dropdown a {
+            display: block;
+            padding: 12px 20px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .profile-dropdown a:last-child {
+            border-bottom: none;
+        }
+        .profile-dropdown a:hover {
+            background: #f8f9fa;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+        .form-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .form-container h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: {% if theme == 'blue' %}#42A5F5{% elif theme == 'orange' %}#FFB74D{% elif theme == 'red' %}#EF5350{% elif theme == 'green' %}#66BB6A{% else %}#667eea{% endif %};
+        }
+        .btn {
+            background: {% if theme == 'blue' %}linear-gradient(135deg, #42A5F5 0%, #1565C0 100%){% elif theme == 'orange' %}linear-gradient(135deg, #FFB74D 0%, #E65100 100%){% elif theme == 'red' %}linear-gradient(135deg, #EF5350 0%, #B71C1C 100%){% elif theme == 'green' %}linear-gradient(135deg, #66BB6A 0%, #1B5E20 100%){% else %}linear-gradient(135deg, #667eea 0%, #764ba2 100%){% endif %};
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ffcdd2;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #c8e6c9;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: {% if theme == 'blue' %}#42A5F5{% elif theme == 'orange' %}#FFB74D{% elif theme == 'red' %}#EF5350{% elif theme == 'green' %}#66BB6A{% else %}#667eea{% endif %};
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+<header>
+    <a href="/dashboard" style="color: white; text-decoration: none; font-size: 20px; margin-right: 20px; font-weight: 500;">← Back</a>
+    <h1 style="cursor: pointer;" onclick="window.location.href='/dashboard'">Settings</h1>
+    <div class="profile-menu">
+        <div class="profile-icon" onclick="toggleProfileMenu()">👤</div>
+        <div class="profile-dropdown" id="profileDropdown">
+            <a href="#" style="pointer-events: none; color: #666; font-weight: bold;">{{ username }}</a>
+            <a href="/settings">Settings</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+</header>
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
+        <h2>Change Theme</h2>
+        <form method="post" action="/settings">
+            <input type="hidden" name="action" value="change_theme">
+            <div class="form-group">
+                <label for="theme">Color Theme</label>
+                <select name="theme" id="theme">
+                    <option value="purple" {% if theme == 'purple' %}selected{% endif %}>Purple</option>
+                    <option value="blue" {% if theme == 'blue' %}selected{% endif %}>Blue</option>
+                    <option value="orange" {% if theme == 'orange' %}selected{% endif %}>Orange</option>
+                    <option value="red" {% if theme == 'red' %}selected{% endif %}>Red</option>
+                    <option value="green" {% if theme == 'green' %}selected{% endif %}>Green</option>
+                </select>
+            </div>
+            <button type="submit" class="btn">Update Theme</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Change Password</h2>
+        <form method="post" action="/settings">
+            <input type="hidden" name="action" value="change_password">
+            <div class="form-group">
+                <label for="old_password">Old Password</label>
+                <input type="password" name="old_password" id="old_password" required>
+            </div>
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" name="new_password" id="new_password" required>
+            </div>
+            <button type="submit" class="btn">Change Password</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>Change Username</h2>
+        <form method="post" action="/settings">
+            <input type="hidden" name="action" value="change_username">
+            <div class="form-group">
+                <label for="new_username">New Username</label>
+                <input type="text" name="new_username" id="new_username" value="{{ username }}" required>
+            </div>
+            <button type="submit" class="btn">Change Username</button>
+        </form>
+    </div>
+
+    <a href="/dashboard" class="back-link">← Back to Dashboard</a>
+</div>
+
+<script>
+function toggleProfileMenu() {
+    const dropdown = document.getElementById('profileDropdown');
+    dropdown.classList.toggle('show');
+}
+
+document.addEventListener('click', function(event) {
+    const profileMenu = document.querySelector('.profile-menu');
+    const dropdown = document.getElementById('profileDropdown');
+    if (!profileMenu.contains(event.target)) {
+        dropdown.classList.remove('show');
+    }
+});
+</script>
+</body>
+</html>
+

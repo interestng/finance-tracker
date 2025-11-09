@@ -3,9 +3,9 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from datetime import datetime
 from dotenv import load_dotenv
+from urllib.parse import unquote
 import os
 import bcrypt
-import re
 
 load_dotenv()
 app = Flask(__name__)
@@ -104,7 +104,27 @@ def dashboard():
         categories = [t['category'] for t in transactions]
         most_common_category = max(set(categories), key=categories.count)
 
-    return render_template('dashboard.html', username=username, transactions=transactions, income=income, expenses=expenses, highlights=highlights, most_common_category=most_common_category)
+    user = db.users.find_one({"username": username})
+    
+    category_budgets = user.get('category_budgets', {}) if user else {}
+    budget = sum(category_budgets.values()) if category_budgets else 0
+    
+    budget_percentage = 0
+    if budget > 0:
+        budget_percentage = (current_month_expenses / budget) * 100
+
+    category_spending = {}
+    for category, budget_amount in category_budgets.items():
+        category_expenses = sum(t['amount'] for t in transactions if t['type'] == 'expense' and t['category'] == category and datetime.strptime(t['date'],'%Y-%m-%d').month == today.month)
+        category_spending[category] = {
+            'spent': category_expenses,
+            'budget': budget_amount,
+            'percentage': (category_expenses / budget_amount * 100) if budget_amount > 0 else 0
+        }
+
+    theme = user.get('theme', 'purple') if user else 'purple'
+
+    return render_template('dashboard.html', username=username, transactions=transactions, income=income, expenses=expenses, highlights=highlights, most_common_category=most_common_category, budget=budget, current_month_expenses=current_month_expenses, budget_percentage=budget_percentage, theme=theme, category_budgets=category_budgets, category_spending=category_spending)
 
 @app.route('/add', methods=['POST'])
 def add():
@@ -152,6 +172,104 @@ def edit(id):
         date = request.form.get('date', transaction['date'])
         db.transactions.update_one({"_id": ObjectId(id)}, {"$set": {"amount": amount, "type": t_type, "category": category, "date": date}})
     return redirect('/dashboard')
+
+@app.route('/set_category_budget', methods=['POST'])
+def set_category_budget():
+    if 'user' not in session:
+        return redirect('/login')
+    username = session['user']
+    category = request.form.get('category', '').strip()
+    try:
+        budget_amount = float(request.form.get('budget_amount', 0))
+    except:
+        budget_amount = 0
+    
+    if category and budget_amount > 0:
+        user = db.users.find_one({"username": username})
+        category_budgets = user.get('category_budgets', {}) if user else {}
+        category_budgets[category] = budget_amount
+        db.users.update_one({"username": username}, {"$set": {"category_budgets": category_budgets}})
+    
+    return redirect('/dashboard#budget')
+
+@app.route('/delete_category_budget/<path:category>', methods=['POST'])
+def delete_category_budget(category):
+    if 'user' not in session:
+        return redirect('/login')
+    username = session['user']
+    category = unquote(category)
+    user = db.users.find_one({"username": username})
+    if user:
+        category_budgets = user.get('category_budgets', {})
+        if category in category_budgets:
+            del category_budgets[category]
+            db.users.update_one({"username": username}, {"$set": {"category_budgets": category_budgets}})
+    return redirect('/dashboard#budget')
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    if 'user' not in session:
+        return redirect('/login')
+    username = session['user']
+    user = db.users.find_one({"username": username})
+    theme = user.get('theme', 'purple') if user else 'purple'
+    
+    # Clear any lingering flash messages when accessing settings via GET
+    if request.method == 'GET':
+        session.pop('_flashes', None)
+    
+    if request.method == 'POST':
+        action = request.form.get('action')
+        
+        if action == 'change_password':
+            old_password = request.form.get('old_password', '')
+            new_password = request.form.get('new_password', '')
+            
+            if not old_password or not new_password:
+                flash('Please fill in all password fields', 'error')
+                return render_template('settings.html', username=username, theme=theme)
+            
+            if len(new_password) < 6:
+                flash('New password must be at least 6 characters long', 'error')
+                return render_template('settings.html', username=username, theme=theme)
+            
+            if user and bcrypt.checkpw(old_password.encode('utf-8'), user['password'].encode('utf-8')):
+                hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+                db.users.update_one({"username": username}, {"$set": {"password": hashed_password.decode('utf-8')}})
+                flash('Password changed successfully!', 'success')
+            else:
+                flash('Old password is incorrect', 'error')
+                return render_template('settings.html', username=username, theme=theme)
+        
+        elif action == 'change_username':
+            new_username = request.form.get('new_username', '').strip()
+            
+            if not new_username:
+                flash('Please enter a new username', 'error')
+                return render_template('settings.html', username=username, theme=theme)
+            
+            if len(new_username) < 3:
+                flash('Username must be at least 3 characters long', 'error')
+                return render_template('settings.html', username=username, theme=theme)
+            
+            if db.users.find_one({"username": new_username}):
+                flash('Username already exists', 'error')
+                return render_template('settings.html', username=username, theme=theme)
+            
+            db.users.update_one({"username": username}, {"$set": {"username": new_username}})
+            db.transactions.update_many({"username": username}, {"$set": {"username": new_username}})
+            session['user'] = new_username
+            flash('Username changed successfully!', 'success')
+            username = new_username
+        
+        elif action == 'change_theme':
+            new_theme = request.form.get('theme', 'purple')
+            db.users.update_one({"username": username}, {"$set": {"theme": new_theme}})
+            flash('Theme updated successfully!', 'success')
+            theme = new_theme
+    
+    return render_template('settings.html', username=username, theme=theme)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
