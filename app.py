@@ -13,6 +13,12 @@ app.secret_key = os.getenv("SECRET_KEY")
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client.finance_db
 
+@app.route('/')
+def index():
+    if 'user' in session:
+        return redirect('/dashboard')
+    return redirect('/login')
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
